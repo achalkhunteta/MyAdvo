@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {% include "common_header.html" %}
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <a class="navbar-brand" href="javascript:;"><i class="fa fa-book" aria-hidden="true"></i> Google Form</a>
+            </div>
+
+            <!-- Sidebar Menu Items - These collapse to the responsive navigation menu on small screens -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav side-nav">
+                    <li class="active">
+                        <a href={% url 'create_form' %}><i class="fa fa-plus"></i> Create New Form</a>
+                    </li>
+                    <li>
+                        <a href={% url 'list_form' %}><i class="fa fa-list"></i> Saved Forms</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </nav>
+
+        <div id="page-wrapper">
+
+            <div class="container-fluid">
+
+                <!-- Page Heading -->
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1 class="page-header">
+                            <i class="fa fa-plus"></i> Create New Form
+                        </h1>
+                    </div>
+                </div>
+                <!-- /.row -->
+
+                <div class="row">
+                    <div class="col-lg-7">
+
+                        <form id='google_form' action={% url 'create_form' %} method="post"> {% csrf_token %}
+                            <div class="form-group">
+                                <label>
+                                    <span class="mandatory">* </span> Form Title
+                                </label>
+                                <input class="form-control" name=title placeholder="Title for Form" id="form_title" required>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="col-sm-offset-3 col-sm-9">
+                                    <button id="save_form_btn" type="" class="btn btn-default">
+                                        <i class="fa fa-floppy-o text-success"></i> Save Form
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                    </div>
+                    <div id="add_field_wrapper" class="col-lg-5">
+                        <div id='add_field_btns' class="col-lg-12">
+                            <h3>Add New fields</h3>
+                            <div class="btn-group">
+                                <button id='text_btn' type="" class="btn btn-default">
+                                    <i class="fa fa-font text-success"></i> Text Field
+                                </button>
+                                <button id='check_btn' type="" class="btn btn-default">
+                                    <i class="fa fa-check-square-o text-success"></i> Check Box
+                                </button>
+                                <button id='multi_btn' type="" class="btn btn-default">
+                                    <i class="fa fa-list text-success"></i> Multiple Choice
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.row -->
+
+            </div>
+            <!-- /.container-fluid -->
+
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+</body>
+
+</html>
+
+{% block load_js %}
+   
+   {% include "common_js.html" %}
+
+   <script type="text/javascript">
+        var that = '',
+            searialized_form = [];
+
+        var base_url = location.protocol + "//" + location.host
+        /*Event triggers when user click on Add Text Button*/
+        $('#text_btn, #check_btn, #multi_btn').on('click', function(e){
+            /*Html to be appended in DOM*/
+            that = this
+            if (this.id == 'text_btn'){
+
+                box_html = '\
+                    <div id="field_box" style="padding:25px;">\
+                        <div class="form-group">\
+                            <label>Question Title:</label>\
+                            <input type="text" class="form-control">\
+                        </div>'    
+            } else if(this.id == 'check_btn'){
+                box_html = '\
+                    <div id="field_box" style="padding:25px;">\
+                        <div class="form-group">\
+                            <label>Question Title:</label>\
+                            <input type="text" class="form-control">\
+                        </div>'
+
+            } else if(this.id == 'multi_btn'){
+                box_html = '\
+                    <div id="field_box" style="padding:25px;">\
+                        <div class="form-group">\
+                            <label>Question Title:</label>\
+                            <input type="text" class="form-control">\
+                        </div>\
+                        <div class="form-group">\
+                            <label>Option 1:</label>\
+                            <input type="text" class="form-control">\
+                            <label>Option 2:</label>\
+                            <input type="text" class="form-control">\
+                            <label>Option 3:</label>\
+                            <input type="text" class="form-control">\
+                            <label>Option 4:</label>\
+                            <input type="text" class="form-control">\
+                        </div>'
+
+            }
+
+            add_cncl_btns_html='\
+                    <div class="btn-group">\
+                        <button id="add_field" type="button" class="btn btn-primary">Add</button>\
+                        <button id="cancel_field" type="button" class="btn btn-warning">Cancel</button>\
+                    </div>\
+                </div>'
+
+            text_box_html = box_html + add_cncl_btns_html
+            /*Disable field buttons and Add HTML to DOM*/
+            $("#text_btn, #check_btn, #multi_btn").prop("disabled",true);
+            $('#add_field_wrapper').append(text_box_html)
+        });
+
+        /* Event triggers when Cancel Field button is clicked */
+        $('#add_field_wrapper').delegate('#cancel_field', 'click', function(event){
+            /*Enable field buttons and Add HTML to DOM*/
+            $("#text_btn, #check_btn, #multi_btn").prop("disabled",false);
+            $('#add_field_wrapper').children().last().remove()
+        });
+
+        /* Event triggers when Add Field button is clicked */
+        $('#add_field_wrapper').delegate('#add_field', 'click', function(event){
+
+            var field_value_array = []
+            /* Get Field values to append in the main Google Form */
+            $('#field_box :input:text').each(function(elem){
+                field_value_array.push($(this).val())
+            })
+
+            if (that.id == 'text_btn'){
+                /* Get Existing Text type input in Main form*/
+                var existing_number_texts = $("#google_form").find('.form-group input:text').length - 1
+                box_html = '\
+                    <div class="form-group">\
+                        <label for={1}>{0}</label>\
+                        <input class="form-control" name={2}>\
+                    </div>'.replace('{0}', field_value_array[0]
+                        ).replace('{1}', 'input_text_' + existing_number_texts
+                        ).replace('{2}', 'input_text_' + existing_number_texts
+                        )    
+            } else if(that.id == 'check_btn'){
+                /* Get Existing CheckBox type input in Main form*/
+                var existing_number_checks = $("#google_form").find('.form-group input:checkbox').length
+                box_html = '\
+                    <div class="form-group">\
+                        <label for={1} class="checkbox-inline" style="font-weight:bold;">\
+                            <input name={2} type="checkbox" value="">{0}\
+                        </label>\
+                    </div>'.replace('{0}', field_value_array[0]
+                        ).replace('{1}', 'check_text_' + existing_number_checks
+                        ).replace('{2}', 'check_text_' + existing_number_checks
+                        )
+            } else if(that.id == 'multi_btn'){
+                /* Get Existing CheckBox type input in Main form*/
+                var existing_number_radio = $("#google_form").find('.form-group input:radio').length,
+                    existing_number_mcq = existing_number_radio / 4
+                box_html = '\
+                    <div class="form-group">\
+                        <label name={9}>{0}</label>\
+                        <div class="radio">\
+                            <label><input type="radio" value={10} name={5}>{1}</label>\
+                        </div>\
+                        <div class="radio">\
+                            <label><input type="radio" value={11} name={6}>{2}</label>\
+                        </div>\
+                        <div class="radio">\
+                            <label><input type="radio" value={12} name={7}>{3}</label>\
+                        </div>\
+                        <div class="radio">\
+                            <label><input type="radio" value={13} name={8}>{4}</label>\
+                        </div>\
+                    </div>'.replace('{0}', field_value_array[0]
+                        ).replace('{1}', field_value_array[1]
+                        ).replace('{2}', field_value_array[2]
+                        ).replace('{3}', field_value_array[3]
+                        ).replace('{4}', field_value_array[4]
+                        ).replace('{10}', field_value_array[1]
+                        ).replace('{11}', field_value_array[2]
+                        ).replace('{12}', field_value_array[3]
+                        ).replace('{13}', field_value_array[4]
+                        ).replace('{5}', 'radio_text_' + existing_number_radio
+                        ).replace('{6}', 'radio_text_' + existing_number_radio
+                        ).replace('{7}', 'radio_text_' + existing_number_radio
+                        ).replace('{8}', 'radio_text_' + existing_number_radio
+                        ).replace('{9}', 'multi_' + existing_number_mcq)
+
+            }
+
+            /* Add Newly created DOM elements in main google form */
+            $(box_html).insertBefore("#google_form div.form-group:last")
+            /*Enable field buttons and Add HTML to DOM*/
+            $("#text_btn, #check_btn, #multi_btn").prop("disabled",false);
+            $('#add_field_wrapper').children().last().remove();
+        });
+
+        $("form").submit(function(e){
+            e.preventDefault();
+
+            form_title = $('#form_title')[0].value
+            form_rows = $('#google_form').find('.form-group')
+
+            /* 
+                Loop through all Form rows to create a dictonary to searialize.
+                We will run the loop for form row's lenght-1 because last row is for submit button and it's of no use
+            */
+            for(var i=0; i<form_rows.length-1; i++){
+                current_row_childs = form_rows[i].children
+                temp_object = {}
+
+                if (current_row_childs.length == 2){        // Case of Text Box
+                    temp_object["name"] = current_row_childs[1].name
+                    temp_object["label"] = current_row_childs[0].innerText
+                    temp_object["type"] = 'text'
+                    temp_object["required"] = current_row_childs[1].required
+                } else if (current_row_childs.length == 5){     // Case of Multiple Choices(Radio Buttons)
+                    temp_object["name"] = current_row_childs[0].getAttribute('name')
+                    temp_object["label"] = current_row_childs[0].innerText
+                    temp_object["type"] = 'radio'
+                    
+                    choices = [
+                        {
+                            'name' : current_row_childs[1].children[0].children[0].value,
+                            'value': current_row_childs[1].children[0].children[0].value,
+                        },
+                        {
+                            'name' : current_row_childs[2].children[0].children[0].value,
+                            'value': current_row_childs[2].children[0].children[0].value,
+                        },
+                        {
+                            'name' : current_row_childs[3].children[0].children[0].value,
+                            'value': current_row_childs[3].children[0].children[0].value,
+                        },
+                        {
+                            'name' : current_row_childs[4].children[0].children[0].value,
+                            'value': current_row_childs[4].children[0].children[0].value,
+                        }
+                    ]
+
+                    temp_object["choices"] = choices
+                } else if (current_row_childs.length == 1){     // Case of Check Box
+                    temp_object["name"] = current_row_childs[0].children[0].name
+                    temp_object["label"] = current_row_childs[0].innerText
+                    temp_object["type"] = "checkbox"
+                }
+                
+                searialized_form.push(temp_object)
+            };
+
+            /* Searialize Form Data in JSON format and pass it in ajax request */
+            searialized_form_data = JSON.stringify([form_title, searialized_form])
+
+            /* Send an ajax request to save form */
+            $.ajax({
+                url : base_url + '{% url "save_form" %}',
+                type: 'post',
+                dataType: 'json',
+                data: searialized_form_data,
+                success: function(response){
+                    if (response['success']){
+                        window.location.replace(base_url + "{% url 'list_form' %}");
+                    }
+                }
+            })
+        });
+   </script>
+
+{% endblock %}

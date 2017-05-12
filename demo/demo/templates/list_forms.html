@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {% include "common_header.html" %}
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <a class="navbar-brand" href="javascript:;"><i class="fa fa-book" aria-hidden="true"></i> Google Form</a>
+            </div>
+
+            <!-- Sidebar Menu Items - These collapse to the responsive navigation menu on small screens -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav side-nav">
+                    <li>
+                        <a href={% url 'create_form' %}><i class="fa fa-plus"></i> Create New Form</a>
+                    </li>
+                    <li class="active">
+                        <a href={% url 'list_form' %}><i class="fa fa-list"></i> Saved Forms</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </nav>
+
+        <div id="page-wrapper">
+
+            <div class="container-fluid">
+
+                <!-- Page Heading -->
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1 class="page-header">
+                            <i class="fa fa-list"></i>
+                             Saved Forms...
+                        </h1>
+                    </div>
+                </div>
+                <!-- /.row -->
+
+                <div class="row">
+                        <div class="col-lg-12">                
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Form Title</th>
+                                    <th>Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                                {% for obj in object_list %}
+                                    <tr>
+                                        <td>{{ obj.title }}</td>
+                                        <td>
+                                            <button class='.btn-default'>
+                                                <i title="View Form" data-id={{ obj.id }} class="fa fa-eye text-primary view_btn" aria-hidden="true"></i>
+                                            </button>
+                                            <button class='.btn-default'>
+                                                <i title="Delete Form" data-id={{ obj.id }} class="fa fa-trash text-danger delete_btn" aria-hidden="true"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- /.row -->
+
+            </div>
+            <!-- /.container-fluid -->
+
+        </div>
+
+    </div>
+    <!-- /#wrapper -->
+</body>
+
+{% block load_js %}
+   
+   {% include "common_js.html" %}
+
+   <script type="text/javascript">
+        $('.view_btn').on('click', function(e){
+            var primary_key = $(this).data('id')
+
+            base_url = location.protocol + "//" + location.host
+            view_form_url = base_url + '/view_form/'+ primary_key + '/'
+
+            window.open(view_form_url, '_blank');
+        })
+
+        $('.delete_btn').on('click', function(e){
+            var primary_key = $(this).data('id')
+
+            base_url = location.protocol + "//" + location.host
+            delete_form_url = base_url + '/delete_form/'+ primary_key + '/'
+
+            /* Send an ajax request to Delete form */
+            $.ajax({
+                url : delete_form_url,
+                type: 'get',
+                success: function(response){
+                    if (response['success']){
+                        /* Refresh the page on successfull deletion */
+                        location.reload();
+                    }
+                }
+            })
+        })
+   </script>
+
+{% endblock %}
